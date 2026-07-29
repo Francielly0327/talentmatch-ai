@@ -24,9 +24,7 @@ export interface ParsedResumeResult {
 
 async function extractTextFromPdf(file: File): Promise<string> {
   const pdfjs = await import("pdfjs-dist");
-  // Use fake worker to avoid worker setup on edge/dev.
-  // @ts-expect-error runtime option
-  pdfjs.GlobalWorkerOptions.workerSrc = "";
+  (pdfjs as unknown as { GlobalWorkerOptions: { workerSrc: string } }).GlobalWorkerOptions.workerSrc = "";
   const buf = await file.arrayBuffer();
   const doc = await pdfjs.getDocument({
     data: buf,
@@ -40,8 +38,7 @@ async function extractTextFromPdf(file: File): Promise<string> {
     const page = await doc.getPage(p);
     const content = await page.getTextContent();
     const strings = content.items
-      // @ts-expect-error item shape
-      .map((i) => ("str" in i ? i.str : ""))
+      .map((i: unknown) => (i && typeof i === "object" && "str" in i ? String((i as { str: string }).str) : ""))
       .filter(Boolean);
     out += strings.join(" ") + "\n";
   }
