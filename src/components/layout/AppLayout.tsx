@@ -5,13 +5,13 @@ import {
   FileText,
   Briefcase,
   History,
-  Sparkles,
   Menu,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/shared/Logo";
 
 const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -52,16 +52,8 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 
 function Brand() {
   return (
-    <Link to="/" className="flex items-center gap-2 px-2 py-1">
-      <div className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-primary-foreground shadow-sm">
-        <Sparkles className="h-5 w-5" />
-      </div>
-      <div className="leading-tight">
-        <div className="text-sm font-semibold tracking-tight">TalentMatch</div>
-        <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-          AI · ATS
-        </div>
-      </div>
+    <Link to="/" className="flex items-center gap-2 px-1 py-1" aria-label="TalentMatch AI">
+      <Logo size={40} showWordmark />
     </Link>
   );
 }
