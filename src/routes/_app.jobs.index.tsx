@@ -23,28 +23,7 @@ export const Route = createFileRoute("/_app/jobs/")({
 
 function JobsPage() {
   const jobs = useJobs();
-  const [open, setOpen] = useState(false);
-  const [text, setText] = useState("");
-  const navigate = useNavigate();
 
-  const analyze = () => {
-    if (text.trim().length < 30) {
-      toast.error("Cole uma descrição de vaga mais completa.");
-      return;
-    }
-    const extracted = AIService.analyzeJob(text);
-    const job: Job = {
-      id: uid(),
-      createdAt: new Date().toISOString(),
-      rawText: text,
-      ...extracted,
-    };
-    StorageService.upsertJob(job);
-    setText("");
-    setOpen(false);
-    toast.success("Vaga analisada");
-    navigate({ to: "/jobs/$id", params: { id: job.id } });
-  };
 
   return (
     <div className="space-y-6">
