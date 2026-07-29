@@ -1,24 +1,13 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { StorageService, uid } from "@/lib/storage";
-import { AIService } from "@/lib/ai-service";
+import { StorageService } from "@/lib/storage";
 import { useJobs } from "@/hooks/use-storage";
-import type { Job } from "@/types";
-import { Briefcase, Plus, Star, Trash2, ArrowRight, Sparkles } from "lucide-react";
+import { Briefcase, Plus, Star, Trash2, ArrowRight } from "lucide-react";
+
 
 export const Route = createFileRoute("/_app/jobs/")({
   head: () => ({
@@ -34,28 +23,7 @@ export const Route = createFileRoute("/_app/jobs/")({
 
 function JobsPage() {
   const jobs = useJobs();
-  const [open, setOpen] = useState(false);
-  const [text, setText] = useState("");
-  const navigate = useNavigate();
 
-  const analyze = () => {
-    if (text.trim().length < 30) {
-      toast.error("Cole uma descrição de vaga mais completa.");
-      return;
-    }
-    const extracted = AIService.analyzeJob(text);
-    const job: Job = {
-      id: uid(),
-      createdAt: new Date().toISOString(),
-      rawText: text,
-      ...extracted,
-    };
-    StorageService.upsertJob(job);
-    setText("");
-    setOpen(false);
-    toast.success("Vaga analisada");
-    navigate({ to: "/jobs/$id", params: { id: job.id } });
-  };
 
   return (
     <div className="space-y-6">
@@ -66,24 +34,10 @@ function JobsPage() {
             Cole a descrição da vaga — a IA extrai tudo e calcula seu match.
           </p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button><Plus className="mr-1 h-4 w-4" /> Analisar vaga</Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader><DialogTitle>Nova análise de vaga</DialogTitle></DialogHeader>
-            <Textarea
-              rows={14}
-              placeholder="Cole aqui a descrição completa da vaga…"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-            />
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-              <Button onClick={analyze}><Sparkles className="mr-1 h-4 w-4" /> Analisar</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Button asChild>
+          <Link to="/jobs/new"><Plus className="mr-1 h-4 w-4" /> Analisar vaga</Link>
+        </Button>
+
       </div>
 
       {jobs.length === 0 ? (
@@ -96,7 +50,7 @@ function JobsPage() {
               <div className="text-lg font-semibold">Nenhuma vaga ainda</div>
               <p className="text-sm text-muted-foreground">Cole uma descrição para iniciar sua primeira análise.</p>
             </div>
-            <Button onClick={() => setOpen(true)}><Plus className="mr-1 h-4 w-4" /> Analisar vaga</Button>
+            <Button asChild><Link to="/jobs/new"><Plus className="mr-1 h-4 w-4" /> Analisar vaga</Link></Button>
           </CardContent>
         </Card>
       ) : (

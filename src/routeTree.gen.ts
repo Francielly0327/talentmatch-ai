@@ -15,7 +15,9 @@ import { Route as AppProfileRouteImport } from './routes/_app.profile'
 import { Route as AppHistoryRouteImport } from './routes/_app.history'
 import { Route as AppResumesIndexRouteImport } from './routes/_app.resumes.index'
 import { Route as AppJobsIndexRouteImport } from './routes/_app.jobs.index'
+import { Route as AppResumesNewRouteImport } from './routes/_app.resumes.new'
 import { Route as AppResumesIdRouteImport } from './routes/_app.resumes.$id'
+import { Route as AppJobsNewRouteImport } from './routes/_app.jobs.new'
 import { Route as AppJobsIdRouteImport } from './routes/_app.jobs.$id'
 
 const AppRoute = AppRouteImport.update({
@@ -47,9 +49,19 @@ const AppJobsIndexRoute = AppJobsIndexRouteImport.update({
   path: '/jobs/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppResumesNewRoute = AppResumesNewRouteImport.update({
+  id: '/resumes/new',
+  path: '/resumes/new',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppResumesIdRoute = AppResumesIdRouteImport.update({
   id: '/resumes/$id',
   path: '/resumes/$id',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppJobsNewRoute = AppJobsNewRouteImport.update({
+  id: '/jobs/new',
+  path: '/jobs/new',
   getParentRoute: () => AppRoute,
 } as any)
 const AppJobsIdRoute = AppJobsIdRouteImport.update({
@@ -63,7 +75,9 @@ export interface FileRoutesByFullPath {
   '/history': typeof AppHistoryRoute
   '/profile': typeof AppProfileRoute
   '/jobs/$id': typeof AppJobsIdRoute
+  '/jobs/new': typeof AppJobsNewRoute
   '/resumes/$id': typeof AppResumesIdRoute
+  '/resumes/new': typeof AppResumesNewRoute
   '/jobs/': typeof AppJobsIndexRoute
   '/resumes/': typeof AppResumesIndexRoute
 }
@@ -72,7 +86,9 @@ export interface FileRoutesByTo {
   '/profile': typeof AppProfileRoute
   '/': typeof AppIndexRoute
   '/jobs/$id': typeof AppJobsIdRoute
+  '/jobs/new': typeof AppJobsNewRoute
   '/resumes/$id': typeof AppResumesIdRoute
+  '/resumes/new': typeof AppResumesNewRoute
   '/jobs': typeof AppJobsIndexRoute
   '/resumes': typeof AppResumesIndexRoute
 }
@@ -83,7 +99,9 @@ export interface FileRoutesById {
   '/_app/profile': typeof AppProfileRoute
   '/_app/': typeof AppIndexRoute
   '/_app/jobs/$id': typeof AppJobsIdRoute
+  '/_app/jobs/new': typeof AppJobsNewRoute
   '/_app/resumes/$id': typeof AppResumesIdRoute
+  '/_app/resumes/new': typeof AppResumesNewRoute
   '/_app/jobs/': typeof AppJobsIndexRoute
   '/_app/resumes/': typeof AppResumesIndexRoute
 }
@@ -94,7 +112,9 @@ export interface FileRouteTypes {
     | '/history'
     | '/profile'
     | '/jobs/$id'
+    | '/jobs/new'
     | '/resumes/$id'
+    | '/resumes/new'
     | '/jobs/'
     | '/resumes/'
   fileRoutesByTo: FileRoutesByTo
@@ -103,7 +123,9 @@ export interface FileRouteTypes {
     | '/profile'
     | '/'
     | '/jobs/$id'
+    | '/jobs/new'
     | '/resumes/$id'
+    | '/resumes/new'
     | '/jobs'
     | '/resumes'
   id:
@@ -113,7 +135,9 @@ export interface FileRouteTypes {
     | '/_app/profile'
     | '/_app/'
     | '/_app/jobs/$id'
+    | '/_app/jobs/new'
     | '/_app/resumes/$id'
+    | '/_app/resumes/new'
     | '/_app/jobs/'
     | '/_app/resumes/'
   fileRoutesById: FileRoutesById
@@ -166,11 +190,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppJobsIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/resumes/new': {
+      id: '/_app/resumes/new'
+      path: '/resumes/new'
+      fullPath: '/resumes/new'
+      preLoaderRoute: typeof AppResumesNewRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/resumes/$id': {
       id: '/_app/resumes/$id'
       path: '/resumes/$id'
       fullPath: '/resumes/$id'
       preLoaderRoute: typeof AppResumesIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/jobs/new': {
+      id: '/_app/jobs/new'
+      path: '/jobs/new'
+      fullPath: '/jobs/new'
+      preLoaderRoute: typeof AppJobsNewRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/jobs/$id': {
@@ -188,7 +226,9 @@ interface AppRouteChildren {
   AppProfileRoute: typeof AppProfileRoute
   AppIndexRoute: typeof AppIndexRoute
   AppJobsIdRoute: typeof AppJobsIdRoute
+  AppJobsNewRoute: typeof AppJobsNewRoute
   AppResumesIdRoute: typeof AppResumesIdRoute
+  AppResumesNewRoute: typeof AppResumesNewRoute
   AppJobsIndexRoute: typeof AppJobsIndexRoute
   AppResumesIndexRoute: typeof AppResumesIndexRoute
 }
@@ -198,7 +238,9 @@ const AppRouteChildren: AppRouteChildren = {
   AppProfileRoute: AppProfileRoute,
   AppIndexRoute: AppIndexRoute,
   AppJobsIdRoute: AppJobsIdRoute,
+  AppJobsNewRoute: AppJobsNewRoute,
   AppResumesIdRoute: AppResumesIdRoute,
+  AppResumesNewRoute: AppResumesNewRoute,
   AppJobsIndexRoute: AppJobsIndexRoute,
   AppResumesIndexRoute: AppResumesIndexRoute,
 }
