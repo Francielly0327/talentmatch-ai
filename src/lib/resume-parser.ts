@@ -165,7 +165,7 @@ export async function extractTextFromPdf(
       message: STAGE_MESSAGES.reading,
     });
   }
-  await doc.destroy();
+  await (doc as unknown as { destroy?: () => Promise<void> }).destroy?.();
   return { text: out, pages };
 }
 
