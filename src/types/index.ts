@@ -1,5 +1,6 @@
 export interface Profile {
   name: string;
+  title?: string;
   email: string;
   phone: string;
   city: string;
@@ -15,10 +16,11 @@ export interface Profile {
   languages: string[];
   hardSkills: string[];
   softSkills: string[];
+  projects?: ProjectItem[];
   salaryExpectation: string;
   workModel: "presencial" | "hibrido" | "remoto" | "";
   availability: string;
-  level: "estagio" | "junior" | "pleno" | "senior" | "especialista" | "";
+  level: string;
 }
 
 export interface Experience {
@@ -27,6 +29,7 @@ export interface Experience {
   role: string;
   startDate: string;
   endDate: string;
+  current?: boolean;
   description: string;
 }
 
@@ -34,8 +37,17 @@ export interface Education {
   id: string;
   institution: string;
   course: string;
+  type?: string;
+  status?: string;
   startDate: string;
   endDate: string;
+}
+
+export interface ProjectItem {
+  id: string;
+  name: string;
+  description: string;
+  link?: string;
 }
 
 export interface Resume {
@@ -43,9 +55,23 @@ export interface Resume {
   name: string;
   createdAt: string;
   updatedAt: string;
+  /** Basic header information — always rendered at the top of the resume */
+  fullName?: string;
+  title?: string;
+  email?: string;
+  phone?: string;
+  city?: string;
+  state?: string;
+  linkedin?: string;
+  github?: string;
+  website?: string;
+  portfolio?: string;
   summary: string;
   experiences: Experience[];
   education: Education[];
+  projects?: ProjectItem[];
+  certifications?: string[];
+  languages?: string[];
   hardSkills: string[];
   softSkills: string[];
   keywords: string[];
