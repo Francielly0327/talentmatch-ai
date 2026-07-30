@@ -189,7 +189,7 @@ export function buildResumeBody(d: ResumeDocData): string {
   const education = d.education
     .filter((e) => e.course || e.institution)
     .map((e) => {
-      const meta = [e.type, e.status].filter(Boolean).map(esc).join(" · ");
+      const meta = [e.type, e.status].filter((x): x is string => !!x).map(esc).join(" · ");
       return `
         <article class="tm-item">
           <div class="tm-item-head">
