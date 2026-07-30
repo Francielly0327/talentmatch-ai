@@ -125,7 +125,6 @@ export async function extractTextFromPdf(
   try {
     doc = await pdfjs.getDocument({
       data: new Uint8Array(buf),
-      isEvalSupported: false,
       useSystemFonts: true,
     }).promise;
   } catch (err) {
@@ -166,7 +165,7 @@ export async function extractTextFromPdf(
       message: STAGE_MESSAGES.reading,
     });
   }
-  await doc.destroy?.();
+  await doc.destroy();
   return { text: out, pages };
 }
 
