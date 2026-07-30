@@ -35,7 +35,12 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { TagInput } from "@/components/shared/TagInput";
 import { cn } from "@/lib/utils";
 import { StorageService, uid } from "@/lib/storage";
-import { ResumeParserService, type ParsedResumeSummary } from "@/lib/resume-parser";
+import {
+  ResumeParserService,
+  ResumeParseError,
+  PARSE_ERROR_MESSAGES,
+  type ParsedResumeSummary,
+} from "@/lib/resume-parser";
 import { useProfile } from "@/hooks/use-storage";
 import type { Profile, Resume, Experience, Education } from "@/types";
 
@@ -171,19 +176,23 @@ function NewResumePage() {
       const merged: DraftResume = {
         ...emptyDraft,
         name: "Currículo importado",
-        fullName: result.profile.name || "",
-        email: result.profile.email || "",
-        phone: result.profile.phone || "",
-        linkedin: result.profile.linkedin || "",
-        github: result.profile.github || "",
-        website: result.profile.website || "",
-        summary: result.profile.summary || "",
-        experiences: result.profile.experiences || [],
-        education: result.profile.education || [],
-        certifications: result.profile.certifications || [],
-        hardSkills: result.profile.hardSkills || [],
-        softSkills: result.profile.softSkills || [],
-        languages: result.profile.languages || [],
+        fullName: result.parsed.fullName,
+        title: result.parsed.professionalTitle,
+        email: result.parsed.email,
+        phone: result.parsed.phone,
+        city: result.parsed.city,
+        state: result.parsed.state,
+        linkedin: result.parsed.linkedin,
+        github: result.parsed.github,
+        website: result.parsed.website,
+        portfolio: result.parsed.portfolio,
+        summary: result.parsed.professionalSummary,
+        experiences: result.parsed.experiences,
+        education: result.parsed.education,
+        certifications: result.parsed.certifications,
+        hardSkills: result.parsed.hardSkills,
+        softSkills: result.parsed.softSkills,
+        languages: result.parsed.languages,
       };
       setDraft(merged);
       setImportSummary(result.summary);
@@ -191,7 +200,11 @@ function NewResumePage() {
       setMode("wizard");
     } catch (err) {
       console.error(err);
-      toast.error("Não foi possível ler o PDF. Tente outro arquivo.", { id: "parse" });
+      const message =
+        err instanceof ResumeParseError
+          ? PARSE_ERROR_MESSAGES[err.code]
+          : PARSE_ERROR_MESSAGES.unknown;
+      toast.error(message, { id: "parse", duration: 8000 });
     } finally {
       setImporting(false);
     }
