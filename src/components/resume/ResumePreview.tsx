@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { buildResumeBody, RESUME_CSS, type ResumeDocData } from "@/lib/resume-document";
 import { cn } from "@/lib/utils";
 
