@@ -60,21 +60,42 @@ export function ResumePreviewResponsive({
 }) {
   useResumeStyles();
   const html = buildResumeBody(data);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  const [height, setHeight] = useState(1123);
+
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const sheet = el.firstElementChild as HTMLElement | null;
+    const apply = () => {
+      const s = Math.min(1, el.clientWidth / 794);
+      setScale(s);
+      if (sheet) setHeight(sheet.offsetHeight * s);
+    };
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    if (sheet) ro.observe(sheet);
+    return () => ro.disconnect();
+  }, [html]);
 
   return (
     <div className={cn("rounded-xl border bg-muted/40 p-3", className)}>
-      <div className="tm-a4-wrap">
+      <div ref={wrapRef} style={{ width: "100%", height, overflow: "hidden" }}>
         <div
-          className="tm-resume tm-a4 rounded-md shadow-sm"
+          className="tm-resume rounded-md shadow-sm"
+          style={{
+            width: "794px",
+            minHeight: "1123px",
+            padding: "16mm 15mm",
+            transform: `scale(${scale})`,
+            transformOrigin: "top left",
+          }}
           dangerouslySetInnerHTML={{ __html: html }}
         />
       </div>
-      <style>{`
-        .tm-a4-wrap{container-type:inline-size;width:100%;overflow:hidden;}
-        .tm-a4{width:210mm;min-height:297mm;padding:16mm 15mm;transform-origin:top left;}
-        @container (max-width: 794px){ .tm-a4{transform:scale(calc(100cqw / 794));} }
-        .tm-a4-wrap{height:auto;}
-      `}</style>
     </div>
   );
 }
+
