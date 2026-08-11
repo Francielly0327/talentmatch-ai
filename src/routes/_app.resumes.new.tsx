@@ -202,21 +202,39 @@ function NewResumePage() {
         <CardHeader>
           <CardTitle className="text-base">Usar informações do meu perfil</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-          <p className="min-w-0 text-sm text-muted-foreground">
-            {profile.name
-              ? `Preenche com os dados de ${profile.name}.`
-              : "Seu perfil ainda está vazio — preencha-o para usar esta opção."}
-          </p>
-          <Button
-            variant="outline"
-            className="shrink-0"
-            onClick={() => setDraft(resumeFromProfile(profile))}
-            disabled={!profile.name}
-          >
-            <User className="mr-1 h-4 w-4" /> Usar perfil
-          </Button>
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+            <p className="min-w-0 text-sm text-muted-foreground">
+              {profile.name
+                ? `Preenche com os dados de ${profile.name}.`
+                : "Seu perfil ainda está vazio — preencha-o para usar esta opção."}
+            </p>
+            <Button
+              variant="outline"
+              className="shrink-0"
+              onClick={() => {
+                if (!isProfileReady(profile)) {
+                  setGateOpen(true);
+                  return;
+                }
+                setDraft(resumeFromProfile(profile));
+              }}
+              disabled={!profile.name}
+            >
+              <User className="mr-1 h-4 w-4" /> Usar perfil
+            </Button>
+          </div>
+          <ProfileGateDialog
+            open={gateOpen}
+            onOpenChange={setGateOpen}
+            profile={profile}
+            onContinueAnyway={() => {
+              setGateOpen(false);
+              setDraft(resumeFromProfile(profile));
+            }}
+          />
         </CardContent>
+
       </Card>
 
       {/* Opção 3 — do zero */}
