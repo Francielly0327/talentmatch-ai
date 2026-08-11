@@ -18,9 +18,15 @@ export interface Profile {
   softSkills: string[];
   projects?: ProjectItem[];
   salaryExpectation: string;
+  /** Valor numérico da pretensão salarial em reais (para análises). */
+  salaryValue?: number;
   workModel: "presencial" | "hibrido" | "remoto" | "";
   availability: string;
   level: string;
+  /** Usuário declarou não possuir experiência profissional. */
+  hasNoExperience?: boolean;
+  /** Usuário declarou não possuir formação acadêmica. */
+  hasNoEducation?: boolean;
 }
 
 export interface Experience {
