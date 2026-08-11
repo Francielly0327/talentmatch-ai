@@ -322,21 +322,33 @@ export function ResumeForm({
               <Field label="Empresa">
                 <Input value={exp.company} onChange={(e) => setExp(i, { company: e.target.value })} />
               </Field>
-              <Field label="Início">
-                <Input
-                  type="month"
-                  value={toMonthInputValue(exp.startDate)}
-                  onChange={(e) => setExp(i, { startDate: e.target.value })}
+              <Field label="Início *" error={!exp.startDate ? "Selecione a data de início." : ""}>
+                <MonthPicker
+                  value={exp.startDate}
+                  invalid={!exp.startDate}
+                  onChange={(v) => setExp(i, { startDate: v })}
                 />
               </Field>
-              <Field label="Término">
-                <Input
-                  type="month"
-                  disabled={exp.current}
-                  value={toMonthInputValue(exp.endDate)}
-                  onChange={(e) => setExp(i, { endDate: e.target.value })}
+              <Field
+                label="Término"
+                error={
+                  isEndBeforeStart(exp.startDate, exp.endDate)
+                    ? "A data de término deve ser posterior à data de início."
+                    : !exp.current && !exp.endDate
+                      ? "Selecione a data de término."
+                      : ""
+                }
+              >
+                <MonthPicker
+                  value={exp.current ? "" : exp.endDate}
+                  min={exp.startDate}
+                  disabled={!!exp.current}
+                  invalid={isEndBeforeStart(exp.startDate, exp.endDate)}
+                  placeholder={exp.current ? "Atual" : "Selecione o mês"}
+                  onChange={(v) => setExp(i, { endDate: v })}
                 />
               </Field>
+
             </div>
             <label className="flex items-center gap-2 text-sm">
               <Checkbox
