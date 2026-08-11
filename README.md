@@ -74,12 +74,18 @@ Entre os principais serviços estão:
 
 A aplicação utiliza **LocalStorage** na versão atual, mantendo a arquitetura preparada para uma futura integração com banco de dados e autenticação.
 
+## 🌐 Teste a aplicação
+
+A aplicação está disponível para testes online:
+
+**[TalentMatch AI — Testar aplicação](https://talentmatchbr.lovable.app/profile)**
+
 ## Execução
 
 Clone o repositório:
 
 ```bash
-git clone https://github.com/SEU-USUARIO/talentmatch-ai.git
+git clone https://github.com/Francielly0327/talentmatch-ai.git
 ```
 
 Instale as dependências:
