@@ -13,6 +13,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TagInput } from "@/components/shared/TagInput";
+import { SkillTagInput } from "@/components/shared/SkillTagInput";
+import { EmailInput } from "@/components/shared/EmailInput";
+import { CityCombobox, StateCombobox } from "@/components/shared/CityCombobox";
+import { MonthPicker } from "@/components/shared/MonthPicker";
+import { isEndBeforeStart } from "@/lib/profile-utils";
+import { HARD_SKILLS, SOFT_SKILLS } from "@/lib/skills-data";
 import { uid } from "@/lib/storage";
 import {
   BR_STATES,
