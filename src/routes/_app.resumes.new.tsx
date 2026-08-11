@@ -29,6 +29,7 @@ import {
 } from "@/lib/resume-parser";
 import { emptyResume, resumeFromParsed, resumeFromProfile } from "@/lib/resume-factory";
 import { useProfile } from "@/hooks/use-storage";
+import { ProfileGateDialog, isProfileReady } from "@/components/shared/ProfileGateDialog";
 import type { Resume } from "@/types";
 
 export const Route = createFileRoute("/_app/resumes/new")({
@@ -48,6 +49,7 @@ export const Route = createFileRoute("/_app/resumes/new")({
 function NewResumePage() {
   const navigate = useNavigate();
   const [profile] = useProfile();
+  const [gateOpen, setGateOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [draft, setDraft] = useState<Resume | null>(null);
