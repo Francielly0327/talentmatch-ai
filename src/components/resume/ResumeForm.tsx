@@ -183,14 +183,11 @@ export function ResumeForm({
             </Field>
           </div>
           <Field label="Email" error={emailError} htmlFor="email">
-            <Input
+            <EmailInput
               id="email"
-              type="email"
-              inputMode="email"
               value={resume.email ?? ""}
-              onChange={(e) => onChange({ email: e.target.value.trim().slice(0, 160) })}
-              placeholder="maria@email.com"
-              aria-invalid={!!emailError}
+              invalid={!!emailError}
+              onChange={(v) => onChange({ email: v })}
             />
           </Field>
           <Field label="Telefone" error={phoneError} htmlFor="phone">
@@ -204,30 +201,24 @@ export function ResumeForm({
             />
           </Field>
           <Field label="Cidade" htmlFor="city">
-            <Input
+            <CityCombobox
               id="city"
-              value={resume.city ?? ""}
-              onChange={(e) => onChange({ city: sanitizeCity(e.target.value).slice(0, 60) })}
-              placeholder="São Paulo"
+              city={resume.city}
+              state={resume.state}
+              onChange={({ city, state }) =>
+                onChange({ city, state: state || resume.state })
+              }
             />
           </Field>
           <Field label="Estado">
-            <Select
+            <StateCombobox
               value={resume.state || undefined}
-              onValueChange={(v) => onChange({ state: v })}
-            >
-              <SelectTrigger aria-label="Estado">
-                <SelectValue placeholder="Selecione a UF" />
-              </SelectTrigger>
-              <SelectContent>
-                {BR_STATES.map((s) => (
-                  <SelectItem key={s.value} value={s.value}>
-                    {s.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onChange={(uf) =>
+                onChange({ state: uf, city: resume.state === uf ? resume.city : "" })
+              }
+            />
           </Field>
+
           <Field label="LinkedIn" error={urlError(resume.linkedin)} htmlFor="linkedin">
             <Input
               id="linkedin"
