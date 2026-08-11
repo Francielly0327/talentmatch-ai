@@ -528,19 +528,22 @@ export function ResumeForm({
       {/* 7. Competências */}
       <SectionCard id="competencias" title="7. Competências">
         <Field label="Competências técnicas">
-          <TagInput
+          <SkillTagInput
             value={resume.hardSkills ?? []}
+            catalog={[...HARD_SKILLS]}
             onChange={(v) => onChange({ hardSkills: v })}
             placeholder="Ex.: React — pressione Enter"
           />
         </Field>
         <Field label="Competências comportamentais">
-          <TagInput
+          <SkillTagInput
             value={resume.softSkills ?? []}
+            catalog={[...SOFT_SKILLS]}
             onChange={(v) => onChange({ softSkills: v })}
             placeholder="Ex.: Comunicação — pressione Enter"
           />
         </Field>
+
       </SectionCard>
 
       {/* 8. Idiomas */}
