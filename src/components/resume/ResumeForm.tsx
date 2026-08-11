@@ -13,6 +13,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TagInput } from "@/components/shared/TagInput";
+import { SkillTagInput } from "@/components/shared/SkillTagInput";
+import { EmailInput } from "@/components/shared/EmailInput";
+import { CityCombobox, StateCombobox } from "@/components/shared/CityCombobox";
+import { MonthPicker } from "@/components/shared/MonthPicker";
+import { isEndBeforeStart } from "@/lib/profile-utils";
+import { HARD_SKILLS, SOFT_SKILLS } from "@/lib/skills-data";
 import { uid } from "@/lib/storage";
 import {
   BR_STATES,
@@ -183,14 +189,11 @@ export function ResumeForm({
             </Field>
           </div>
           <Field label="Email" error={emailError} htmlFor="email">
-            <Input
+            <EmailInput
               id="email"
-              type="email"
-              inputMode="email"
               value={resume.email ?? ""}
-              onChange={(e) => onChange({ email: e.target.value.trim().slice(0, 160) })}
-              placeholder="maria@email.com"
-              aria-invalid={!!emailError}
+              invalid={!!emailError}
+              onChange={(v) => onChange({ email: v })}
             />
           </Field>
           <Field label="Telefone" error={phoneError} htmlFor="phone">
@@ -204,30 +207,24 @@ export function ResumeForm({
             />
           </Field>
           <Field label="Cidade" htmlFor="city">
-            <Input
+            <CityCombobox
               id="city"
-              value={resume.city ?? ""}
-              onChange={(e) => onChange({ city: sanitizeCity(e.target.value).slice(0, 60) })}
-              placeholder="São Paulo"
+              city={resume.city}
+              state={resume.state}
+              onChange={({ city, state }) =>
+                onChange({ city, state: state || resume.state })
+              }
             />
           </Field>
           <Field label="Estado">
-            <Select
+            <StateCombobox
               value={resume.state || undefined}
-              onValueChange={(v) => onChange({ state: v })}
-            >
-              <SelectTrigger aria-label="Estado">
-                <SelectValue placeholder="Selecione a UF" />
-              </SelectTrigger>
-              <SelectContent>
-                {BR_STATES.map((s) => (
-                  <SelectItem key={s.value} value={s.value}>
-                    {s.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onChange={(uf) =>
+                onChange({ state: uf, city: resume.state === uf ? resume.city : "" })
+              }
+            />
           </Field>
+
           <Field label="LinkedIn" error={urlError(resume.linkedin)} htmlFor="linkedin">
             <Input
               id="linkedin"
@@ -325,21 +322,33 @@ export function ResumeForm({
               <Field label="Empresa">
                 <Input value={exp.company} onChange={(e) => setExp(i, { company: e.target.value })} />
               </Field>
-              <Field label="Início">
-                <Input
-                  type="month"
-                  value={toMonthInputValue(exp.startDate)}
-                  onChange={(e) => setExp(i, { startDate: e.target.value })}
+              <Field label="Início *" error={!exp.startDate ? "Selecione a data de início." : ""}>
+                <MonthPicker
+                  value={exp.startDate}
+                  invalid={!exp.startDate}
+                  onChange={(v) => setExp(i, { startDate: v })}
                 />
               </Field>
-              <Field label="Término">
-                <Input
-                  type="month"
-                  disabled={exp.current}
-                  value={toMonthInputValue(exp.endDate)}
-                  onChange={(e) => setExp(i, { endDate: e.target.value })}
+              <Field
+                label="Término"
+                error={
+                  isEndBeforeStart(exp.startDate, exp.endDate)
+                    ? "A data de término deve ser posterior à data de início."
+                    : !exp.current && !exp.endDate
+                      ? "Selecione a data de término."
+                      : ""
+                }
+              >
+                <MonthPicker
+                  value={exp.current ? "" : exp.endDate}
+                  min={exp.startDate}
+                  disabled={!!exp.current}
+                  invalid={isEndBeforeStart(exp.startDate, exp.endDate)}
+                  placeholder={exp.current ? "Atual" : "Selecione o mês"}
+                  onChange={(v) => setExp(i, { endDate: v })}
                 />
               </Field>
+
             </div>
             <label className="flex items-center gap-2 text-sm">
               <Checkbox
@@ -436,19 +445,26 @@ export function ResumeForm({
                 </Select>
               </Field>
               <Field label="Início">
-                <Input
-                  type="month"
-                  value={toMonthInputValue(ed.startDate)}
-                  onChange={(e) => setEdu(i, { startDate: e.target.value })}
+                <MonthPicker
+                  value={ed.startDate}
+                  onChange={(v) => setEdu(i, { startDate: v })}
                 />
               </Field>
-              <Field label="Conclusão">
-                <Input
-                  type="month"
-                  value={toMonthInputValue(ed.endDate)}
-                  onChange={(e) => setEdu(i, { endDate: e.target.value })}
+              <Field
+                label="Conclusão"
+                error={
+                  isEndBeforeStart(ed.startDate, ed.endDate)
+                    ? "A data de término deve ser posterior à data de início."
+                    : ""
+                }
+              >
+                <MonthPicker
+                  value={ed.endDate}
+                  min={ed.startDate}
+                  onChange={(v) => setEdu(i, { endDate: v })}
                 />
               </Field>
+
             </div>
           </div>
         ))}
@@ -519,19 +535,22 @@ export function ResumeForm({
       {/* 7. Competências */}
       <SectionCard id="competencias" title="7. Competências">
         <Field label="Competências técnicas">
-          <TagInput
+          <SkillTagInput
             value={resume.hardSkills ?? []}
+            catalog={[...HARD_SKILLS]}
             onChange={(v) => onChange({ hardSkills: v })}
             placeholder="Ex.: React — pressione Enter"
           />
         </Field>
         <Field label="Competências comportamentais">
-          <TagInput
+          <SkillTagInput
             value={resume.softSkills ?? []}
+            catalog={[...SOFT_SKILLS]}
             onChange={(v) => onChange({ softSkills: v })}
             placeholder="Ex.: Comunicação — pressione Enter"
           />
         </Field>
+
       </SectionCard>
 
       {/* 8. Idiomas */}
