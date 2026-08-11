@@ -445,19 +445,26 @@ export function ResumeForm({
                 </Select>
               </Field>
               <Field label="Início">
-                <Input
-                  type="month"
-                  value={toMonthInputValue(ed.startDate)}
-                  onChange={(e) => setEdu(i, { startDate: e.target.value })}
+                <MonthPicker
+                  value={ed.startDate}
+                  onChange={(v) => setEdu(i, { startDate: v })}
                 />
               </Field>
-              <Field label="Conclusão">
-                <Input
-                  type="month"
-                  value={toMonthInputValue(ed.endDate)}
-                  onChange={(e) => setEdu(i, { endDate: e.target.value })}
+              <Field
+                label="Conclusão"
+                error={
+                  isEndBeforeStart(ed.startDate, ed.endDate)
+                    ? "A data de término deve ser posterior à data de início."
+                    : ""
+                }
+              >
+                <MonthPicker
+                  value={ed.endDate}
+                  min={ed.startDate}
+                  onChange={(v) => setEdu(i, { endDate: v })}
                 />
               </Field>
+
             </div>
           </div>
         ))}
