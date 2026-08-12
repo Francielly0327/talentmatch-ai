@@ -104,6 +104,10 @@ export interface Job {
   responsibilities: string[];
   requiredRequirements: string[];
   desiredRequirements: string[];
+  /** Competências classificadas como obrigatórias na descrição da vaga. */
+  requiredSkills?: string[];
+  /** Competências classificadas como desejáveis / diferenciais. */
+  desiredSkills?: string[];
   favorite?: boolean;
   notes?: string;
   checklist?: ChecklistItem[];
@@ -113,6 +117,32 @@ export interface ChecklistItem {
   id: string;
   label: string;
   done: boolean;
+}
+
+/** Um critério objetivo do cálculo de compatibilidade. */
+export interface MatchCriterion {
+  key: string;
+  label: string;
+  /** Peso de referência (0-100). Só entra na conta se `applicable`. */
+  weight: number;
+  applicable: boolean;
+  /** Nota do critério, 0-100. */
+  score: number;
+  detail: string;
+  matched: string[];
+  missing: string[];
+}
+
+/** Resultado determinístico do cálculo de match. */
+export interface MatchResult {
+  overall: number;
+  criteria: MatchCriterion[];
+  requiredSkills: string[];
+  desiredSkills: string[];
+  matchedSkills: string[];
+  missingSkills: Array<{ skill: string; priority: "high" | "medium" | "low" }>;
+  matchedKeywords: string[];
+  missingKeywords: string[];
 }
 
 export interface MatchScore {
@@ -136,8 +166,9 @@ export interface AnalysisRecord {
   jobId: string;
   resumeId: string;
   createdAt: string;
-  score: MatchScore;
+  score: MatchResult;
   gaps: GapAnalysis;
   suggestions: string[];
   optimizedResumeId?: string;
 }
+
