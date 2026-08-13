@@ -176,9 +176,3 @@ export function tailorResumeForJob(
 
   return { resume, changes };
 }
-
-export { highlightedFallback };
-/** Utilitário exportado para testes manuais/depuração. */
-function highlightedFallback(job: Job) {
-  return jobTerms(job);
-}
