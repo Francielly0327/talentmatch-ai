@@ -83,7 +83,18 @@ export interface Resume {
   keywords: string[];
   optimizedFor?: string; // job id
   parentId?: string; // original resume id
+  /** Metadados da personalização (só aparecem na interface, nunca no PDF). */
+  tailoredFor?: {
+    jobId: string;
+    role: string;
+    company: string;
+    matchScore: number;
+    createdAt: string;
+    /** Competências reais do candidato priorizadas por causa desta vaga. */
+    highlightedSkills: string[];
+  };
 }
+
 
 export interface Job {
   id: string;
