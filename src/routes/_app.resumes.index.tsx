@@ -72,7 +72,13 @@ function ResumesPage() {
                   <div className="text-xs text-muted-foreground">
                     Atualizado em {new Date(r.updatedAt).toLocaleDateString("pt-BR")}
                   </div>
+                  {r.tailoredFor && (
+                    <Badge className="w-fit bg-primary/15 text-primary hover:bg-primary/20">
+                      Personalizado · {r.tailoredFor.role} · {r.tailoredFor.matchScore}%
+                    </Badge>
+                  )}
                 </CardHeader>
+
                 <CardContent className="space-y-3">
                   <div className="flex flex-wrap gap-1">
                     {r.hardSkills.slice(0, 6).map((s) => (
