@@ -19,18 +19,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ScoreGauge } from "@/components/shared/ScoreGauge";
+import {
+  MatchBreakdown,
+  MatchGauge,
+  MatchKeywordsPanel,
+  MatchSkillsPanel,
+} from "@/components/match/MatchBreakdown";
 import { StorageService, uid } from "@/lib/storage";
-import { AIService } from "@/lib/ai-service";
+import { calculateMatch, classifyJobSkills, generateSuggestions, toGapAnalysis } from "@/lib/match-engine";
+import { tailorResumeForJob } from "@/lib/resume-tailor";
+import { resumeFromProfile } from "@/lib/resume-factory";
 import { useProfile, useResumes } from "@/hooks/use-storage";
 import type { AnalysisRecord } from "@/types";
 import {
@@ -39,17 +41,17 @@ import {
   Circle,
   Plus,
   Sparkles,
-  XCircle,
   Star,
+  Wand2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_app/jobs/$id")({
   head: () => ({
     meta: [
       { title: "Análise de vaga — TalentMatch AI" },
-      { name: "description", content: "Match score, gaps e otimização ATS para a vaga." },
+      { name: "description", content: "Match score determinístico, gaps e currículo personalizado para a vaga." },
       { property: "og:title", content: "Análise de vaga — TalentMatch AI" },
-      { property: "og:description", content: "Análise detalhada de vaga com IA." },
+      { property: "og:description", content: "Veja exatamente como seu match foi calculado." },
     ],
   }),
   component: JobDetail,
@@ -63,25 +65,24 @@ function JobDetail() {
   const [selectedResume, setSelectedResume] = useState<string | undefined>(resumes[0]?.id);
   const navigate = useNavigate();
   const [notes, setNotes] = useState(job?.notes || "");
-  const [checklist, setChecklist] = useState(
-    job?.checklist || defaultChecklist(),
-  );
+  const [checklist, setChecklist] = useState(job?.checklist || defaultChecklist());
 
-  const resume = resumes.find((r) => r.id === selectedResume);
-  const score = useMemo(
-    () => (job && resume ? AIService.calculateMatch(job, resume, profile) : null),
-    [job, resume, profile],
-  );
-  const gaps = useMemo(
-    () => (job && resume ? AIService.identifySkillGaps(job, resume, profile) : null),
-    [job, resume, profile],
-  );
-  const suggestions = useMemo(
-    () => (score && gaps ? AIService.generateSuggestions(score, gaps) : []),
-    [score, gaps],
-  );
+  const resume = resumes.find((r) => r.id === selectedResume) ?? resumes[0];
 
-  if (!job) {
+  /** Vaga com requisitos classificados (obrigatórios x diferenciais). */
+  const analyzedJob = useMemo(() => {
+    if (!job) return null;
+    const { required, desired } = classifyJobSkills(job);
+    return { ...job, requiredSkills: required, desiredSkills: desired };
+  }, [job]);
+
+  const match = useMemo(
+    () => (analyzedJob && resume ? calculateMatch(analyzedJob, resume, profile) : null),
+    [analyzedJob, resume, profile],
+  );
+  const suggestions = useMemo(() => (match ? generateSuggestions(match) : []), [match]);
+
+  if (!job || !analyzedJob) {
     return (
       <div className="py-16 text-center text-sm text-muted-foreground">
         Vaga não encontrada. <Link to="/jobs" className="text-primary">voltar</Link>
@@ -89,16 +90,8 @@ function JobDetail() {
     );
   }
 
-  const radarData = score
-    ? [
-        { k: "Hard", v: score.hardSkills },
-        { k: "Soft", v: score.softSkills },
-        { k: "Exp.", v: score.experience },
-        { k: "Educ.", v: score.education },
-        { k: "Idiomas", v: score.languages },
-        { k: "Keywords", v: score.keywords },
-        { k: "Senior.", v: score.seniority },
-      ]
+  const radarData = match
+    ? match.criteria.filter((c) => c.applicable).map((c) => ({ k: shortLabel(c.key), v: c.score }))
     : [];
 
   const saveNotes = () => {
@@ -106,41 +99,53 @@ function JobDetail() {
     toast.success("Salvo");
   };
 
-  const optimize = () => {
-    if (!resume) {
-      toast.error("Selecione um currículo primeiro.");
+  /** Cria uma NOVA versão do currículo adaptada a esta vaga. O original nunca muda. */
+  const createTailoredResume = () => {
+    const source =
+      resume ??
+      (profile.name || profile.hardSkills.length ? resumeFromProfile(profile) : null);
+    if (!source) {
+      toast.error("Complete seu perfil ou crie um currículo antes de gerar a versão da vaga.");
       return;
     }
-    const optimized = AIService.optimizeResume(job, resume, profile);
-    StorageService.upsertResume(optimized);
+    const currentMatch = match ?? calculateMatch(analyzedJob, source, profile);
+    const { resume: tailored, changes } = tailorResumeForJob(
+      analyzedJob,
+      source,
+      profile,
+      currentMatch,
+    );
+    StorageService.upsertResume(tailored);
     const record: AnalysisRecord = {
       id: uid(),
       jobId: job.id,
-      resumeId: resume.id,
+      resumeId: source.id,
       createdAt: new Date().toISOString(),
-      score: score!,
-      gaps: gaps!,
-      suggestions,
-      optimizedResumeId: optimized.id,
+      score: currentMatch,
+      gaps: toGapAnalysis(currentMatch),
+      suggestions: suggestions.length ? suggestions : generateSuggestions(currentMatch),
+      optimizedResumeId: tailored.id,
     };
     StorageService.addAnalysis(record);
-    toast.success("Currículo ATS gerado");
-    navigate({ to: "/resumes/$id", params: { id: optimized.id } });
+    toast.success("Currículo personalizado criado", { description: changes[0] });
+    navigate({ to: "/resumes/$id", params: { id: tailored.id } });
   };
 
   const runAnalysis = () => {
-    if (!resume || !score || !gaps) return;
+    if (!resume || !match) return;
     StorageService.addAnalysis({
       id: uid(),
       jobId: job.id,
       resumeId: resume.id,
       createdAt: new Date().toISOString(),
-      score,
-      gaps,
+      score: match,
+      gaps: toGapAnalysis(match),
       suggestions,
     });
     toast.success("Análise registrada no histórico");
   };
+
+  const tailoredVersions = resumes.filter((r) => r.tailoredFor?.jobId === job.id);
 
   return (
     <div className="space-y-6">
@@ -167,12 +172,14 @@ function JobDetail() {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Select value={selectedResume} onValueChange={setSelectedResume}>
+          <Select value={resume?.id} onValueChange={setSelectedResume}>
             <SelectTrigger className="w-56">
               <SelectValue placeholder="Selecione currículo" />
             </SelectTrigger>
             <SelectContent>
-              {resumes.length === 0 && <div className="p-2 text-xs text-muted-foreground">Crie um currículo primeiro</div>}
+              {resumes.length === 0 && (
+                <div className="p-2 text-xs text-muted-foreground">Crie um currículo primeiro</div>
+              )}
               {resumes.map((r) => (
                 <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
               ))}
@@ -181,8 +188,8 @@ function JobDetail() {
           <Button variant="outline" onClick={runAnalysis} disabled={!resume}>
             Registrar análise
           </Button>
-          <Button onClick={optimize} disabled={!resume}>
-            <Sparkles className="mr-1 h-4 w-4" /> Otimizar para ATS
+          <Button onClick={createTailoredResume}>
+            <Wand2 className="mr-1 h-4 w-4" /> Criar currículo para esta vaga
           </Button>
         </div>
       </div>
@@ -191,108 +198,99 @@ function JobDetail() {
         <Card>
           <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
             <p className="text-sm text-muted-foreground">
-              Crie um currículo para calcular o match desta vaga.
+              Crie um currículo (ou complete seu perfil) para calcular o match desta vaga.
             </p>
             <Button asChild size="sm">
-              <Link to="/resumes"><Plus className="mr-1 h-4 w-4" /> Novo currículo</Link>
+              <Link to="/resumes/new"><Plus className="mr-1 h-4 w-4" /> Novo currículo</Link>
             </Button>
           </CardContent>
         </Card>
       )}
 
-      {resume && score && gaps && (
-        <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
-          <Card>
-            <CardHeader><CardTitle className="text-base">Match Score</CardTitle></CardHeader>
-            <CardContent className="flex flex-col items-center gap-4">
-              <ScoreGauge value={score.overall} label="Compatibilidade geral" size={160} />
-              <div className="grid w-full grid-cols-2 gap-2 text-xs">
-                <ScoreLine label="Hard skills" value={score.hardSkills} />
-                <ScoreLine label="Soft skills" value={score.softSkills} />
-                <ScoreLine label="Experiência" value={score.experience} />
-                <ScoreLine label="Educação" value={score.education} />
-                <ScoreLine label="Idiomas" value={score.languages} />
-                <ScoreLine label="Keywords" value={score.keywords} />
-                <ScoreLine label="Senioridade" value={score.seniority} />
-              </div>
-            </CardContent>
-          </Card>
+      {tailoredVersions.length > 0 && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Currículos criados para esta vaga</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            {tailoredVersions.map((r) => (
+              <Button key={r.id} asChild size="sm" variant="outline">
+                <Link to="/resumes/$id" params={{ id: r.id }}>
+                  {r.name} · {r.tailoredFor?.matchScore}%
+                </Link>
+              </Button>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
-          <Card>
-            <CardHeader><CardTitle className="text-base">Compatibilidade por dimensão</CardTitle></CardHeader>
-            <CardContent className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart data={radarData}>
-                  <PolarGrid />
-                  <PolarAngleAxis dataKey="k" tick={{ fontSize: 12 }} />
-                  <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 10 }} />
-                  <Radar dataKey="v" stroke="var(--color-primary)" fill="var(--color-primary)" fillOpacity={0.35} />
-                </RadarChart>
-              </ResponsiveContainer>
+      {resume && match && (
+        <>
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
+            <div className="space-y-6">
+              <MatchGauge match={match} />
+              <Card>
+                <CardHeader><CardTitle className="text-base">Compatibilidade por critério</CardTitle></CardHeader>
+                <CardContent className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RadarChart data={radarData}>
+                      <PolarGrid />
+                      <PolarAngleAxis dataKey="k" tick={{ fontSize: 11 }} />
+                      <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 10 }} />
+                      <Radar dataKey="v" stroke="var(--color-primary)" fill="var(--color-primary)" fillOpacity={0.35} />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
+            <MatchBreakdown match={match} />
+          </div>
+
+          <MatchSkillsPanel match={match} />
+
+          <Card className="border-primary/30">
+            <CardContent className="flex flex-wrap items-center justify-between gap-3 py-5">
+              <div>
+                <div className="font-semibold">Currículo personalizado para esta vaga</div>
+                <p className="text-sm text-muted-foreground">
+                  Criamos uma nova versão priorizando suas competências e experiências reais
+                  relacionadas à vaga. Seu currículo original não é alterado.
+                </p>
+              </div>
+              <Button onClick={createTailoredResume}>
+                <Wand2 className="mr-1 h-4 w-4" /> Criar currículo para esta vaga
+              </Button>
             </CardContent>
           </Card>
-        </div>
+        </>
       )}
 
       <Tabs defaultValue="details" className="w-full">
         <TabsList className="grid w-full grid-cols-2 sm:w-auto sm:grid-cols-4">
           <TabsTrigger value="details">Detalhes</TabsTrigger>
-          <TabsTrigger value="gaps">Gaps</TabsTrigger>
+          <TabsTrigger value="keywords">Palavras-chave</TabsTrigger>
           <TabsTrigger value="suggestions">Sugestões</TabsTrigger>
           <TabsTrigger value="tracking">Acompanhar</TabsTrigger>
         </TabsList>
 
         <TabsContent value="details" className="mt-4 grid gap-4 md:grid-cols-2">
-          <InfoCard title="Tecnologias" items={job.technologies} />
+          <InfoCard title="Competências obrigatórias" items={analyzedJob.requiredSkills ?? []} />
+          <InfoCard title="Diferenciais (desejáveis)" items={analyzedJob.desiredSkills ?? []} />
           <InfoCard title="Soft skills" items={job.softSkills} />
           <InfoCard title="Idiomas" items={job.languages} />
-          <InfoCard title="Palavras-chave ATS" items={job.keywords} />
           <ListCard title="Requisitos obrigatórios" items={job.requiredRequirements} />
           <ListCard title="Requisitos desejáveis" items={job.desiredRequirements} />
           <ListCard title="Responsabilidades" items={job.responsibilities} />
           <ListCard title="Benefícios" items={job.benefits} />
         </TabsContent>
 
-        <TabsContent value="gaps" className="mt-4">
-          {gaps ? (
-            <div className="grid gap-4 md:grid-cols-2">
-              <Card>
-                <CardHeader><CardTitle className="text-base flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-success" /> Você possui</CardTitle></CardHeader>
-                <CardContent className="flex flex-wrap gap-1.5">
-                  {gaps.matched.length ? gaps.matched.map((s) => (
-                    <Badge key={s} className="bg-success/15 text-success hover:bg-success/20">{s}</Badge>
-                  )) : <span className="text-xs text-muted-foreground">Nenhum match direto.</span>}
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader><CardTitle className="text-base flex items-center gap-2"><XCircle className="h-4 w-4 text-danger" /> Faltam</CardTitle></CardHeader>
-                <CardContent className="space-y-2">
-                  {gaps.missing.length === 0 && <span className="text-xs text-muted-foreground">Sem gaps.</span>}
-                  {(["high", "medium", "low"] as const).map((p) => {
-                    const items = gaps.missing.filter((g) => g.priority === p);
-                    if (!items.length) return null;
-                    return (
-                      <div key={p} className="space-y-1">
-                        <div className="text-xs uppercase tracking-widest text-muted-foreground">
-                          {p === "high" ? "Alta prioridade" : p === "medium" ? "Média" : "Baixa"}
-                        </div>
-                        <div className="flex flex-wrap gap-1.5">
-                          {items.map((g) => (
-                            <Badge key={g.skill} variant="outline" className={
-                              p === "high" ? "border-danger/50 text-danger" :
-                              p === "medium" ? "border-warning/50 text-warning" :
-                              "border-muted-foreground/30"
-                            }>{g.skill}</Badge>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </CardContent>
-              </Card>
-            </div>
+        <TabsContent value="keywords" className="mt-4">
+          {match ? (
+            <MatchKeywordsPanel match={match} />
           ) : (
-            <p className="text-sm text-muted-foreground">Selecione um currículo para ver os gaps.</p>
+            <p className="text-sm text-muted-foreground">
+              Selecione um currículo para comparar as palavras-chave.
+            </p>
           )}
         </TabsContent>
 
@@ -300,7 +298,9 @@ function JobDetail() {
           <Card>
             <CardHeader><CardTitle className="text-base">Sugestões de melhoria</CardTitle></CardHeader>
             <CardContent className="space-y-2">
-              {suggestions.length === 0 && <p className="text-sm text-muted-foreground">Selecione um currículo para ver sugestões.</p>}
+              {suggestions.length === 0 && (
+                <p className="text-sm text-muted-foreground">Selecione um currículo para ver sugestões.</p>
+              )}
               {suggestions.map((s, i) => (
                 <div key={i} className="flex items-start gap-2 rounded-lg border p-3 text-sm">
                   <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> {s}
@@ -341,6 +341,18 @@ function JobDetail() {
   );
 }
 
+function shortLabel(key: string) {
+  switch (key) {
+    case "required": return "Obrigatórias";
+    case "experience": return "Experiência";
+    case "education": return "Formação";
+    case "keywords": return "Keywords";
+    case "seniority": return "Senioridade";
+    case "desired": return "Diferenciais";
+    default: return "Outros";
+  }
+}
+
 function defaultChecklist() {
   return [
     { id: uid(), label: "Currículo enviado", done: false },
@@ -363,20 +375,6 @@ function ChecklistAdd({ onAdd }: { onAdd: (v: string) => void }) {
         <Plus className="h-4 w-4" />
       </Button>
     </>
-  );
-}
-
-function ScoreLine({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-md border p-2">
-      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className="mt-0.5 flex items-center justify-between">
-        <span className="font-semibold tabular-nums">{value}%</span>
-        <div className="h-1 flex-1 ml-2 overflow-hidden rounded-full bg-muted">
-          <div className="h-full rounded-full bg-primary" style={{ width: `${value}%` }} />
-        </div>
-      </div>
-    </div>
   );
 }
 

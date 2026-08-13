@@ -48,9 +48,13 @@ export function ResumeWorkspace({
             <p className="truncate text-xs text-muted-foreground">
               Salvo automaticamente
               {savedAt ? ` · ${new Date(savedAt).toLocaleString("pt-BR")}` : ""}
+              {resume.tailoredFor
+                ? ` · Personalizado para ${resume.tailoredFor.role} (${resume.tailoredFor.matchScore}% match)`
+                : ""}
             </p>
           </div>
         </div>
+
         <div className="flex shrink-0 gap-2">
           <Button variant="outline" onClick={() => printResumePdf(doc)}>
             <Download className="h-4 w-4 sm:mr-1" />
