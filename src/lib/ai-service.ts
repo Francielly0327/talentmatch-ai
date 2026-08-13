@@ -161,10 +161,3 @@ function originalToText(r: Resume) {
     r.experiences.map((e) => `${e.role} ${e.company} ${e.description}`).join(" "),
   ].join(" ");
 }
-
-function enhanceDescription(desc: string, jobSkills: string[]): string {
-  if (!desc) return "";
-  const missing = jobSkills.filter((s) => !desc.toLowerCase().includes(s.toLowerCase())).slice(0, 3);
-  if (!missing.length) return desc;
-  return `${desc} — com uso de ${missing.join(", ")}.`;
-}
