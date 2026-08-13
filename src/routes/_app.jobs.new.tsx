@@ -19,6 +19,7 @@ import {
 import { cn } from "@/lib/utils";
 import { StorageService, uid } from "@/lib/storage";
 import { AIService } from "@/lib/ai-service";
+import { calculateMatch, classifyJobSkills, generateSuggestions, toGapAnalysis } from "@/lib/match-engine";
 import { useResumes, useProfile } from "@/hooks/use-storage";
 import type { Job, AnalysisRecord } from "@/types";
 
@@ -111,7 +112,7 @@ function NewJobAnalysisPage() {
       .join("\n");
 
     const extracted = AIService.analyzeJob(composed);
-    const job: Job = {
+    const baseJob: Job = {
       id: uid(),
       createdAt: new Date().toISOString(),
       rawText: composed,
@@ -122,14 +123,20 @@ function NewJobAnalysisPage() {
       workType: draft.workModel || extracted.workType,
       notes: draft.notes,
     };
+    const classified = classifyJobSkills(baseJob);
+    const job: Job = {
+      ...baseJob,
+      requiredSkills: classified.required,
+      desiredSkills: classified.desired,
+    };
     StorageService.upsertJob(job);
 
     // Run analysis if resume selected
     const resume = resumes.find((r) => r.id === draft.resumeId);
     if (resume) {
-      const score = AIService.calculateMatch(job, resume, profile);
-      const gaps = AIService.identifySkillGaps(job, resume, profile);
-      const suggestions = AIService.generateSuggestions(score, gaps);
+      const score = calculateMatch(job, resume, profile);
+      const gaps = toGapAnalysis(score);
+      const suggestions = generateSuggestions(score);
       const record: AnalysisRecord = {
         id: uid(),
         jobId: job.id,
