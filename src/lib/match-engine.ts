@@ -157,15 +157,30 @@ export function levelRank(value: string): number | null {
 /* Cálculo dos critérios                                               */
 /* ------------------------------------------------------------------ */
 
-function pctFound(items: string[], haystack: string, declared: Set<string>) {
+/** Peso de uma correspondência transferível frente a uma correspondência direta. */
+const RELATED_CREDIT = 0.6;
+
+function pctFound(
+  items: string[],
+  haystack: string,
+  declared: Set<string>,
+  useTransferable = false,
+) {
   const found: string[] = [];
-  const missing: string[] = [];
+  const notDirect: string[] = [];
   for (const item of items) {
     if (declared.has(normalize(item)) || hasTerm(haystack, item)) found.push(item);
-    else missing.push(item);
+    else notDirect.push(item);
   }
-  const score = items.length ? Math.round((found.length / items.length) * 100) : 0;
-  return { found, missing, score };
+  const related: RelatedSkillMatch[] = useTransferable
+    ? findTransferable(notDirect, haystack)
+    : [];
+  const relatedSet = new Set(related.map((r) => normalize(r.skill)));
+  const missing = notDirect.filter((i) => !relatedSet.has(normalize(i)));
+  const score = items.length
+    ? Math.round(((found.length + RELATED_CREDIT * related.length) / items.length) * 100)
+    : 0;
+  return { found, related, missing, score: Math.min(100, score) };
 }
 
 function experienceScore(job: Job, resume: Resume, profile: Profile, haystack: string) {
