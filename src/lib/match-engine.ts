@@ -1,5 +1,7 @@
 import { normalize } from "./br-cities";
+import { findTransferable } from "./transferable-skills";
 import type {
+  RelatedSkillMatch,
   GapAnalysis,
   Job,
   MatchCriterion,
@@ -305,7 +307,7 @@ export function calculateMatch(job: Job, resume: Resume, profile: Profile): Matc
   const criteria: MatchCriterion[] = [];
 
   // 1. Competências obrigatórias — 40%
-  const req = pctFound(required, haystack, declared);
+  const req = pctFound(required, haystack, declared, true);
   criteria.push({
     key: "required",
     label: "Competências obrigatórias",
@@ -313,9 +315,10 @@ export function calculateMatch(job: Job, resume: Resume, profile: Profile): Matc
     applicable: required.length > 0,
     score: req.score,
     detail: required.length
-      ? `${req.found.length}/${required.length} encontradas no seu perfil`
+      ? `${req.found.length}/${required.length} diretas${req.related.length ? ` + ${req.related.length} transferíveis` : ""} no seu perfil`
       : "A vaga não listou competências obrigatórias",
     matched: req.found,
+    related: req.related.map((r) => r.skill),
     missing: req.missing,
   });
 
@@ -378,7 +381,7 @@ export function calculateMatch(job: Job, resume: Resume, profile: Profile): Matc
   });
 
   // 6. Diferenciais — 5%
-  const dif = pctFound(desired, haystack, declared);
+  const dif = pctFound(desired, haystack, declared, true);
   criteria.push({
     key: "desired",
     label: "Diferenciais (desejáveis)",
@@ -389,6 +392,7 @@ export function calculateMatch(job: Job, resume: Resume, profile: Profile): Matc
       ? `${dif.found.length}/${desired.length} diferenciais encontrados`
       : "A vaga não listou diferenciais",
     matched: dif.found,
+    related: dif.related.map((r) => r.skill),
     missing: dif.missing,
   });
 
@@ -417,6 +421,7 @@ export function calculateMatch(job: Job, resume: Resume, profile: Profile): Matc
     requiredSkills: required,
     desiredSkills: desired,
     matchedSkills: [...req.found, ...dif.found],
+    relatedSkills: [...req.related, ...dif.related],
     missingSkills: [
       ...req.missing.map((s) => ({ skill: s, priority: "high" as const })),
       ...dif.missing.map((s) => ({ skill: s, priority: "medium" as const })),
