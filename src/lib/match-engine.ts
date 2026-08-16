@@ -1,5 +1,7 @@
 import { normalize } from "./br-cities";
+import { findTransferable } from "./transferable-skills";
 import type {
+  RelatedSkillMatch,
   GapAnalysis,
   Job,
   MatchCriterion,
@@ -157,15 +159,30 @@ export function levelRank(value: string): number | null {
 /* Cálculo dos critérios                                               */
 /* ------------------------------------------------------------------ */
 
-function pctFound(items: string[], haystack: string, declared: Set<string>) {
+/** Peso de uma correspondência transferível frente a uma correspondência direta. */
+const RELATED_CREDIT = 0.6;
+
+function pctFound(
+  items: string[],
+  haystack: string,
+  declared: Set<string>,
+  useTransferable = false,
+) {
   const found: string[] = [];
-  const missing: string[] = [];
+  const notDirect: string[] = [];
   for (const item of items) {
     if (declared.has(normalize(item)) || hasTerm(haystack, item)) found.push(item);
-    else missing.push(item);
+    else notDirect.push(item);
   }
-  const score = items.length ? Math.round((found.length / items.length) * 100) : 0;
-  return { found, missing, score };
+  const related: RelatedSkillMatch[] = useTransferable
+    ? findTransferable(notDirect, haystack)
+    : [];
+  const relatedSet = new Set(related.map((r) => normalize(r.skill)));
+  const missing = notDirect.filter((i) => !relatedSet.has(normalize(i)));
+  const score = items.length
+    ? Math.round(((found.length + RELATED_CREDIT * related.length) / items.length) * 100)
+    : 0;
+  return { found, related, missing, score: Math.min(100, score) };
 }
 
 function experienceScore(job: Job, resume: Resume, profile: Profile, haystack: string) {
@@ -290,7 +307,7 @@ export function calculateMatch(job: Job, resume: Resume, profile: Profile): Matc
   const criteria: MatchCriterion[] = [];
 
   // 1. Competências obrigatórias — 40%
-  const req = pctFound(required, haystack, declared);
+  const req = pctFound(required, haystack, declared, true);
   criteria.push({
     key: "required",
     label: "Competências obrigatórias",
@@ -298,9 +315,10 @@ export function calculateMatch(job: Job, resume: Resume, profile: Profile): Matc
     applicable: required.length > 0,
     score: req.score,
     detail: required.length
-      ? `${req.found.length}/${required.length} encontradas no seu perfil`
+      ? `${req.found.length}/${required.length} diretas${req.related.length ? ` + ${req.related.length} transferíveis` : ""} no seu perfil`
       : "A vaga não listou competências obrigatórias",
     matched: req.found,
+    related: req.related.map((r) => r.skill),
     missing: req.missing,
   });
 
@@ -363,7 +381,7 @@ export function calculateMatch(job: Job, resume: Resume, profile: Profile): Matc
   });
 
   // 6. Diferenciais — 5%
-  const dif = pctFound(desired, haystack, declared);
+  const dif = pctFound(desired, haystack, declared, true);
   criteria.push({
     key: "desired",
     label: "Diferenciais (desejáveis)",
@@ -374,6 +392,7 @@ export function calculateMatch(job: Job, resume: Resume, profile: Profile): Matc
       ? `${dif.found.length}/${desired.length} diferenciais encontrados`
       : "A vaga não listou diferenciais",
     matched: dif.found,
+    related: dif.related.map((r) => r.skill),
     missing: dif.missing,
   });
 
@@ -402,6 +421,7 @@ export function calculateMatch(job: Job, resume: Resume, profile: Profile): Matc
     requiredSkills: required,
     desiredSkills: desired,
     matchedSkills: [...req.found, ...dif.found],
+    relatedSkills: [...req.related, ...dif.related],
     missingSkills: [
       ...req.missing.map((s) => ({ skill: s, priority: "high" as const })),
       ...dif.missing.map((s) => ({ skill: s, priority: "medium" as const })),

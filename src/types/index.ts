@@ -92,6 +92,10 @@ export interface Resume {
     createdAt: string;
     /** Competências reais do candidato priorizadas por causa desta vaga. */
     highlightedSkills: string[];
+    /** Competências transferíveis identificadas (com evidência real). */
+    transferableSkills?: string[];
+    /** Lista legível do que a IA adaptou. */
+    changes?: string[];
   };
 }
 
@@ -141,7 +145,16 @@ export interface MatchCriterion {
   score: number;
   detail: string;
   matched: string[];
+  /** Correspondências transferíveis (competência relacionada, com evidência real). */
+  related?: string[];
   missing: string[];
+}
+
+/** Correspondência transferível: a vaga pede X, o candidato demonstra Y relacionado. */
+export interface RelatedSkillMatch {
+  skill: string;
+  concept: string;
+  evidence: string[];
 }
 
 /** Resultado determinístico do cálculo de match. */
@@ -151,6 +164,7 @@ export interface MatchResult {
   requiredSkills: string[];
   desiredSkills: string[];
   matchedSkills: string[];
+  relatedSkills: RelatedSkillMatch[];
   missingSkills: Array<{ skill: string; priority: "high" | "medium" | "low" }>;
   matchedKeywords: string[];
   missingKeywords: string[];
