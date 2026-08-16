@@ -92,6 +92,10 @@ export interface Resume {
     createdAt: string;
     /** Competências reais do candidato priorizadas por causa desta vaga. */
     highlightedSkills: string[];
+    /** Competências transferíveis identificadas (com evidência real). */
+    transferableSkills?: string[];
+    /** Lista legível do que a IA adaptou. */
+    changes?: string[];
   };
 }
 
