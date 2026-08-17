@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, Download, Eye, PencilLine, Save } from "lucide-react";
+import { ArrowLeft, Check, Download, Eye, PencilLine, Save, Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
