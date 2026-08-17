@@ -67,6 +67,42 @@ export function ResumeWorkspace({
         </div>
       </header>
 
+      {resume.tailoredFor && (
+        <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <span className="text-sm font-semibold">
+              Currículo otimizado para: {resume.tailoredFor.role}
+              {resume.tailoredFor.company && resume.tailoredFor.company !== "—"
+                ? ` · ${resume.tailoredFor.company}`
+                : ""}
+            </span>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Personalização realizada pela IA usando apenas informações verdadeiras do seu currículo
+            original. Você pode editar tudo abaixo.
+          </p>
+          {resume.tailoredFor.changes?.length ? (
+            <ul className="mt-3 space-y-1">
+              {resume.tailoredFor.changes.map((c, i) => (
+                <li key={i} className="flex items-start gap-2 text-xs text-foreground/90">
+                  <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                  <span>{c}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {resume.tailoredFor.transferableSkills?.length ? (
+            <p className="mt-3 text-xs text-muted-foreground">
+              Competências transferíveis evidenciadas:{" "}
+              <span className="text-foreground">
+                {resume.tailoredFor.transferableSkills.join(", ")}
+              </span>
+            </p>
+          ) : null}
+        </div>
+      )}
+
       {/* Desktop: editor + preview lado a lado */}
       <div className="hidden gap-6 lg:grid lg:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
         <div className="min-w-0">
