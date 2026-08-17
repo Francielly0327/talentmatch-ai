@@ -109,7 +109,7 @@ function JobDetail() {
       return;
     }
     const currentMatch = match ?? calculateMatch(analyzedJob, source, profile);
-    const { resume: tailored, changes } = tailorResumeForJob(
+    const { resume: tailored, changes, notices } = tailorResumeForJob(
       analyzedJob,
       source,
       profile,
@@ -128,6 +128,7 @@ function JobDetail() {
     };
     StorageService.addAnalysis(record);
     toast.success("Currículo personalizado criado", { description: changes[0] });
+    if (notices.length) toast.info(notices[0]);
     navigate({ to: "/resumes/$id", params: { id: tailored.id } });
   };
 
