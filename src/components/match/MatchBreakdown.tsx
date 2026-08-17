@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScoreGauge } from "@/components/shared/ScoreGauge";
-import { CheckCircle2, HelpCircle, Info } from "lucide-react";
+import { CheckCircle2, HelpCircle, Info, Repeat } from "lucide-react";
 import type { MatchResult } from "@/types";
 
 /**
@@ -116,6 +116,33 @@ export function MatchSkillsPanel({ match }: { match: MatchResult }) {
           )}
         </CardContent>
       </Card>
+
+      {match.relatedSkills?.length > 0 && (
+        <Card className="md:col-span-2 border-primary/30">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Repeat className="h-4 w-4 text-primary" /> Competências transferíveis
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <p className="text-xs text-muted-foreground">
+              A vaga pede estes itens e encontramos experiências reais suas relacionadas — nada foi
+              inventado.
+            </p>
+            <div className="space-y-1.5">
+              {match.relatedSkills.map((r) => (
+                <div key={r.skill} className="flex flex-wrap items-center gap-2 text-xs">
+                  <Badge className="bg-primary/15 text-primary hover:bg-primary/20">{r.skill}</Badge>
+                  <span className="text-muted-foreground">
+                    relacionado a {r.evidence.join(", ")}
+                    {r.concept ? ` (${r.concept})` : ""}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
