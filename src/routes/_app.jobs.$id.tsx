@@ -128,6 +128,7 @@ function JobDetail() {
     };
     StorageService.addAnalysis(record);
     toast.success("Currículo personalizado criado", { description: changes[0] });
+    if (notices.length) toast.info(notices[0]);
     navigate({ to: "/resumes/$id", params: { id: tailored.id } });
   };
 
