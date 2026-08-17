@@ -109,7 +109,7 @@ function JobDetail() {
       return;
     }
     const currentMatch = match ?? calculateMatch(analyzedJob, source, profile);
-    const { resume: tailored, changes } = tailorResumeForJob(
+    const { resume: tailored, changes, notices } = tailorResumeForJob(
       analyzedJob,
       source,
       profile,
